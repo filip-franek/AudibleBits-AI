@@ -60,7 +60,7 @@ plot(X_mxn(:,2), X_mxn*theta_nx1, '-')
 % legend('Training data', 'Linear regression')
 
 % Predict values for a and b
-x1 = mean(X_mx1);
+x1 = min(X_mx1)+(max(X_mx1)-min(X_mx1))/2;
 x2 = min(X_mx1)+(max(X_mx1)-min(X_mx1))/100*90;
 x3 = min(X_mx1)+(max(X_mx1)-min(X_mx1))/100*10;
 predict_y1 = [1, x1] *theta_nx1;
