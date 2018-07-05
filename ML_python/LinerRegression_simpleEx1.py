@@ -7,6 +7,8 @@ Created on Sat Jun 30 14:11:57 2018
 
 import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import axes3d
+from matplotlib import cm
 import myML
 
 plt.show()
@@ -110,12 +112,25 @@ for i in range(theta0_vals.shape[0]):
 
 plt.figure(3)
 plt.plot(theta_hist[0,:],theta_hist[1,:],'r-x')
-cp = plt.contour(theta0_vals, theta1_vals, J_vals.T, np.logspace(-1, 2, 20))
+plt.contour(theta0_vals, theta1_vals, J_vals.T, np.logspace(-1, 3, 20))
 #plt.clabel(cp, inline=True, fontsize=10)
 plt.title('Contour plot of cost with respect to thetas')
 plt.xlabel('theta_0')
 plt.ylabel('theta_1')
 plt.legend(['Gradient descent'])
 
-plt.figure(4)
-np.meshgrid
+fig = plt.figure(4)
+ax = fig.gca(projection='3d')
+Th0, Th1 = np.meshgrid(theta0_vals, theta1_vals)
+ax.plot_surface(Th0, Th1, J_vals)
+#%%
+fig = plt.figure(5)
+ax = fig.add_subplot(111, projection='3d')
+# Plot a basic wireframe.
+ax.plot_wireframe(Th0, Th1, J_vals, rstride=10, cstride=10)
+#%% 
+fig = plt.figure(6)
+ax = fig.gca(projection='3d')
+# Plot the surface.
+surf = ax.plot_surface(Th0, Th1, J_vals, cmap=cm.coolwarm,
+                       linewidth=0, antialiased=False)
