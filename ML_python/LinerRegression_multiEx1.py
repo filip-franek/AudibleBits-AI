@@ -7,16 +7,20 @@ Created on Sat Jun 30 14:11:57 2018
 
 import numpy as np
 import matplotlib.pyplot as plt
-#from mpl_toolkits.mplot3d import axes3d
+from mpl_toolkits.mplot3d import axes3d
 from matplotlib import cm
 import myML
+
+from IPython import get_ipython
+get_ipython().run_line_magic('matplotlib', 'inline') # for inline plotting
+#get_ipython().run_line_magic('matplotlib', 'qt') # for plotting in external window
 
 plt.close('all')
 plt.show()
 #%% Data preparation
 # m ... number of training examples
 # n ... number of features
-text = open('ex1data1.txt','r')
+text = open('ex1data2.txt','r')
 #data_txt = data.readlines()i
 data = []
 for line in text:
@@ -26,33 +30,35 @@ for line in text:
 text.close()
 
 m = len(data)
-n = len(data[0])
+n = len(data[0]) #
 
 #take last column of data as y vector and all previous as X matrix (x_1,x_2,...)
 data_arr = np.array(data)
-X = data_arr[:,0:n-1].reshape(m,n-1)
+X = data_arr[:,0:n-1].reshape(m,n-1) # assert(X.shape == (m,n-1))
 y = data_arr[:,n-1].reshape(m,1)
-#assert(X.shape == (m,n-1))
-#assert(y.shape == (m,1))
 
-fig0 = plt.figure(0)
-ax0 = fig0.add_subplot(111)
-line00, = ax0.plot(X,y,'b*') # label='Training data'
-ax0.set(xlabel='x_1', ylabel='y',title='Data')
-#plt.xlabel('x_1')
-#plt.ylabel('y')
-#plt.title('Data')
+fig1, ax1 = plt.subplots(nrows=n-1, ncols =1) # squeeze=False
+for i in range(n-1):
+    ax1[i] = (plt.subplot(n-1,1,i+1))
+    lines1, = ax1[i].plot(X[:,i],y,'*') # label='Training data'
+    ax1[i].set_xlabel('x_'+str(i+1))
+    ax1[i].set_ylabel('y')
+#    plt.legend(['x_'+str(i+1)])
+    ax1[i].set_title('Data x_'+str(i+1))
+plt.tight_layout()
+#%% normalization
+if n > 2:
+    X_norm, mu, sigma = myML.featNorm(X)
 
 # add column x_0 to X
-X_mxn = np.insert(X,0,np.ones(X.size),axis=1)
+X_mxn = np.insert(X_norm,0,np.ones(X.shape[0]),axis=1)
 
 # initialize values of theta parameters 
 theta = np.zeros((n,1))
-
 #%%  Train parameters
 # gradient descend
-iter = 1000
-alpha = 0.01
+iter = 400
+alpha = 0.05
 
 # compute cost
 h_theta = X_mxn@theta # hypothesis function
@@ -77,48 +83,55 @@ for i in np.arange(0,iter):
 
 #%% plot linear regression, predicted points, cost and theta contours
 
-plt.figure(0)
-line01, = ax0.plot(X,h_theta,'r-') # label='Training data'
-
-#plt.plot(X,h_theta,'r-') # label='Linear regression'
-
+for i in range(n-1):
+    lines00, = ax1[i].plot(X[:,i],h_theta,'r*')
+# linear regression plat needs to be in 3d with 3 theta parameters
+#%%
 # Predict data points
-x_p1 = X.min()+(X.max()-X.min())/2
-x_p2 = X.min()+(X.max()-X.min())/100*90
-x_p3 = X.min()+(X.max()-X.min())/100*10
-X_p = np.array([x_p1, x_p2, x_p3]).reshape(3,1)
-X_o = np.ones((3,1))
-X_op = np.append(X_o, X_p, axis=1)
-y_p = X_op @ theta
+x_p0 = np.array([1650,3])   # ft*2, floors
+x_p1 = X.min(axis=0)+(X.max(axis=0)-X.min(axis=0))/2        # middle point
+x_p2 = X.min(axis=0)+(X.max(axis=0)-X.min(axis=0))/100*90   # 90%
+x_p3 = X.min(axis=0)+(X.max(axis=0)-X.min(axis=0))/100*10   # 10%
+X_p = np.array([x_p0, x_p1, x_p2, x_p3]).reshape(-1,n-1)
+# need to normalize the new set with saved mu and sigma values
+X_p_norm = (X_p-mu)/sigma;
+# x_0 does not need to be normalized
+X_o = np.ones((X_p.shape[0],1))
+X_op_norm = np.append(X_o, X_p_norm, axis=1)
+y_p = X_op_norm @ theta
 
-plt.plot(X_p, y_p, 'ks') # label='Predicted values'
-plt.legend(['Training data', 'Linear regression', 'Predicted values'])
+for i in range(n-1):
+    ax1[i].plot(X_p[:,i],y_p,'ks')
+    ax1[i].legend(['Training data', 'Linear regression', 'Predicted values'])
 
-plt.figure(1)
-plt.plot(J_hist)
-plt.title('Cost for ' + str(iter) + ' iterations and alpha = ' + str(alpha))
-plt.xlabel('# iterations')
-plt.ylabel('Cost J')
+fig2, ax2 = plt.subplots(nrows=1,ncols=1)
+ax2.plot(J_hist)
+ax2.set_title('Cost for ' + str(iter) + ' iterations and alpha = ' + str(alpha))
+ax2.set_xlabel('# iterations')
+ax2.set_ylabel('Cost J')
 #%% Plot 3D thetas
-theta0_vals = np.linspace(-10, 10, 100)
-theta1_vals = np.linspace(-4, 4, 100)
-#Th1, Th2 = np.meshgrid(theta0_vals,theta1_vals)
+theta0_vals = np.linspace(-1e7, 1e7, 100)
+theta1_vals = np.linspace(-1e7, 1e7, 100)
+#theta2_vals = np.linspace(-1e7, 1e7, 100)
+theta2_vals = np.array([-6639.78])
+
 J_vals = np.zeros((100,100))
 
 for i in range(theta0_vals.shape[0]):
     for j in range(theta1_vals.shape[0]):
-        theta_vals = np.array([theta0_vals[i], theta1_vals[j]]).reshape(n,1)
+        theta_vals = np.array([theta0_vals[i], theta1_vals[j], theta2_vals]).reshape(n,1)
         J_vals[i,j] = myML.computeCost(X_mxn, y, theta_vals)
 
-plt.figure(3)
-plt.plot(theta_hist[0,:],theta_hist[1,:],'r-x')
-plt.contour(theta0_vals, theta1_vals, J_vals.T, np.logspace(-1, 3, 20))
+fig3, ax3 = plt.subplots(nrows=1, ncols=1)
+ax3.plot(theta_hist[0,:],theta_hist[1,:],'r-x')
+ax3.contour(theta0_vals, theta1_vals, J_vals.T)
+
 #plt.clabel(cp, inline=True, fontsize=10)
 plt.title('Contour plot of cost with respect to thetas')
 plt.xlabel('theta_0')
 plt.ylabel('theta_1')
 plt.legend(['Gradient descent'])
-
+#%%
 fig = plt.figure(4)
 ax = fig.gca(projection='3d')
 Th0, Th1 = np.meshgrid(theta0_vals, theta1_vals)
